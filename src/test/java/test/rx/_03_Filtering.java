@@ -39,13 +39,13 @@ public class _03_Filtering {
                 .subscribe(subscriber);
     }
 
-    @Test
-    public void takeLastBuffer() {
-
-        Observable.just(1, 2, 3)
-                .takeLastBuffer(2)
-                .subscribe(subscriber);
-    }
+//    @Test
+//    public void takeLastBuffer() {
+//
+//        Observable.just(1, 2, 3)
+//                .takeLastBuffer(2)
+//                .subscribe(subscriber);
+//    }
 
 
     @Test
