@@ -57,7 +57,7 @@ public class _08_Utility {
 
         Observable
                 .interval(1, TimeUnit.SECONDS)
-                //.timeInterval()
+                .timeInterval()
                 .subscribe(subscriber);
 
         Threads.sleep(5000);

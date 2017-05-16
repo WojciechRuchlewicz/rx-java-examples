@@ -4,6 +4,7 @@ import org.junit.Test;
 import rx.Observable;
 import rx.Observer;
 import rx.schedulers.Schedulers;
+import test.rx.services.RestService;
 import test.rx.tools.PrintingObserver;
 
 import java.util.concurrent.Executors;
@@ -15,7 +16,7 @@ import static test.rx.tools.Threads.sleep;
 public class _09_Threading {
 
     Observer<Object> subscriber = new PrintingObserver();
-
+    RestService restService = new RestService();
 
     @Test
     public void multithreading() {
@@ -34,26 +35,8 @@ public class _09_Threading {
 
     @Test
     public void multithreading_subscribeOn_4() {
-        Observable
-                .zip(
-                        Observable
-                                .fromCallable(() -> {
-                                    print("Observable 1 start");
-                                    sleep(1000);
-                                    print("Observable 1 end");
-                                    return 1;
-                                })
-                                .subscribeOn(Schedulers.newThread()),
-                        Observable
-                                .fromCallable(() -> {
-                                    print("Observable 2 start");
-                                    sleep(1500);
-                                    print("Observable 2 end");
-                                    return 2;
-                                })
-                                .subscribeOn(Schedulers.newThread()),
-                        (a, b) -> a + b
-                )
+        restService.callService1()
+                .zipWith(restService.callService2(), (a, b) -> a + b)
                 .observeOn(Schedulers.newThread())
                 .subscribe(subscriber);
 
