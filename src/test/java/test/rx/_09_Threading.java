@@ -68,7 +68,7 @@ public class _09_Threading {
         Schedulers.computation(); // Creates and returns a Scheduler intended for computational work. This can be used for event-loops, processing callbacks and other computational work. the number of threads, by default, is equal to the number of processors.
         Schedulers.immediate(); // Creates and returns a Scheduler that executes work immediately on the current thread.
         Schedulers.trampoline(); // Creates and returns a Scheduler that queues work on the current thread to be executed after the current work completes.
-        Schedulers.from(Executors.newSingleThreadExecutor()); // uses the specified Executor as a Scheduler
+        Schedulers.from(Executors.newFixedThreadPool(4)); // uses the specified Executor as a Scheduler
         Schedulers.test(); // Creates and returns a TestScheduler, which is useful for debugging. It allows you to test schedules of events by manually advancing the clock at whatever pace you choose.
     }
 }

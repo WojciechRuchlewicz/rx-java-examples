@@ -44,7 +44,7 @@ public class _04_Transforming {
     public void flatMap() {
 
         Observable.just(1, 2, 3)
-                .flatMap(n -> Observable.just("a" + n))
+                .flatMap(n -> Observable.just("a" + n, "b" + n))
                 .subscribe(subscriber);
     }
 

@@ -16,91 +16,28 @@ public class _03_Filtering {
 
 
     @Test
-    public void filter() {
+    public void filterOperators() {
 
         Observable
                 .range(1, 50)
-                .filter(i -> i % 10 == 0)
+                //.ignoreElements()
+                //.first()
+                //.last()
+                //.take(3)
+                //.takeLast(3)
+                //.skip(47)
+                //.filter(i -> i % 10 == 0)
+                //.elementAtOrDefault(55, -1)
                 .subscribe(subscriber);
     }
-
-
-    @Test
-    public void first() {
-
-        Observable
-                .range(1, 50)
-                .first()
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void last() {
-
-        Observable
-                .range(1, 50)
-                .last()
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void take() {
-
-        Observable
-                .range(1, 50)
-                .take(3)
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void takeLast() {
-
-        Observable
-                .range(1, 50)
-                .takeLast(3)
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void skip() {
-        Observable
-                .range(1, 3)
-                .skip(1)
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void elementAtOrDefault() {
-        Observable
-                .just(1, 2, 3)
-                .elementAtOrDefault(4, 5)
-                .subscribe(subscriber);
-    }
-
 
     @Test
     public void distinct() {
-
-        Observable.just(1, 2, 3)
-                .repeat(5)
-                //.distinct()
-                .subscribe(subscriber);
-    }
-
-
-    @Test
-    public void distinctUntilChanged() {
-
         Observable.just(1, 2, 2, 3, 3, 3, 2, 2, 2)
+                //.distinct()
                 //.distinctUntilChanged()
                 .subscribe(subscriber);
     }
-
 
     @Test
     public void takeLastBuffer() {
@@ -119,14 +56,5 @@ public class _03_Filtering {
                 .subscribe(subscriber);
 
         sleep(10000);
-    }
-
-
-    @Test
-    public void ignoreElements() {
-
-        Observable.just(1, 2, 3)
-                .ignoreElements()
-                .subscribe(subscriber);
     }
 }
