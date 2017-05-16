@@ -8,7 +8,7 @@ import java.util.Random;
 import static test.rx.tools.Threads.sleep;
 
 
-public class TemperatureSource {
+public class TemperatureService {
 
     private Random random = new Random();
 
