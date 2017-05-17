@@ -7,11 +7,11 @@ import rx.schedulers.Schedulers;
 import static test.rx.tools.Log.print;
 import static test.rx.tools.Threads.sleep;
 
-public class AccountService {
+public class AccountClient {
 
     private final int callDuration;
 
-    public AccountService(int callDuration) {
+    public AccountClient(int callDuration) {
         this.callDuration = callDuration;
     }
 

@@ -11,8 +11,8 @@ import rx.subjects.AsyncSubject;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.ReplaySubject;
-import test.rx.services.AccountService;
-import test.rx.services.RestClient;
+import test.rx.services.AccountClient;
+import test.rx.services.SyntheticClient;
 import test.rx.services.TemperatureSensor;
 import test.rx.services.UserDao;
 import test.rx.tools.Log;
@@ -29,10 +29,10 @@ public class Examples {
     private final Observer<Object> subscriber = new PrintingObserver();
     private final TemperatureSensor temperatureSensor = new TemperatureSensor();
     private final UserDao userDao = new UserDao();
-
-    private final AccountService accountService1 = new AccountService(1000);
-    private final AccountService accountService2 = new AccountService(500);
-    private final AccountService accountService3 = new AccountService(1500);
+    private final SyntheticClient syntheticClient = new SyntheticClient();
+    private final AccountClient accountService1 = new AccountClient(1000);
+    private final AccountClient accountService2 = new AccountClient(500);
+    private final AccountClient accountService3 = new AccountClient(1500);
 
     /******************************************************************************************************************
      * Syntax
@@ -315,15 +315,18 @@ public class Examples {
 
     @Test
     public void combine() {
-        Observable
-                .just(1, 2, 3)
-                //.startWith(-1, 0)
-                //.mergeWith(Observable.just(4, 5, 6))
-                //.concatWith(Observable.just(4, 5, 6))
-                //.ambWith(Observable.just(4, 5, 6))
-                //.zipWith(Observable.just("a", "b"), (l, n) -> l + n)
-                //.withLatestFrom(Observable.just("a", "b"), (l, n) -> l + n)
+        Observable<Long> fastSource = syntheticClient.fastSource(); // 1, 2, 3
+        Observable<Long> slowSource = syntheticClient.slowSource(); // 4, 5, 6
+
+        fastSource
+                //.mergeWith(slowSource)
+                //.concatWith(slowSource)
+                //.startWith(slowSource)
+                //.ambWith(slowSource)
+                //.zipWith(slowSource, (l, n) -> l + ":" + n)
                 .subscribe(subscriber);
+
+        sleep(10000);
     }
 
     /******************************************************************************************************************
@@ -422,10 +425,7 @@ public class Examples {
     @Test
     public void events() {
 
-        Observable
-                .just(1, 2)
-                .concatWith(Observable.error(new Exception())) // 1, 2, Error
-
+        syntheticClient.failingService() // 1, 2, Error
                 .doOnNext(n -> print("doOnNext " + n))
                 .doOnEach(n -> print("doOnEach " + n))
                 .doOnCompleted(() -> print("doOnCompleted"))
@@ -440,8 +440,6 @@ public class Examples {
     /******************************************************************************************************************
      * Threading
      ******************************************************************************************************************/
-
-    private RestClient restService = new RestClient();
 
     @Test
     public void multithreading1() {
@@ -460,8 +458,8 @@ public class Examples {
 
     @Test
     public void multithreading2() {
-        restService.callService1()
-                .zipWith(restService.callService2(), (a, b) -> a + b)
+        syntheticClient.callService1()
+                .zipWith(syntheticClient.callService2(), (a, b) -> a + b)
                 .observeOn(Schedulers.newThread())
                 .subscribe(subscriber);
 
@@ -531,8 +529,7 @@ public class Examples {
     @Test
     public void onErrorReturn() {
 
-        Observable.just(1, 2)
-                .concatWith(Observable.error(new Exception())) // 1, 2, Error
+        syntheticClient.failingService() // 1, 2, Error
                 .onErrorReturn(throwable -> -1)
                 .subscribe(subscriber);
     }
@@ -540,8 +537,7 @@ public class Examples {
     @Test
     public void onErrorResumeNext() {
 
-        Observable.just(1, 2)
-                .concatWith(Observable.error(new Exception())) // 1, 2, Error
+        syntheticClient.failingService() // 1, 2, Error
                 .onErrorResumeNext(Observable.just(3, 4)) // backup service
                 .subscribe(subscriber);
     }

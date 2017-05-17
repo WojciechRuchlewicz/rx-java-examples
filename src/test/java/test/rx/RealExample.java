@@ -4,7 +4,7 @@ import org.junit.Test;
 import rx.Observable;
 import rx.Observer;
 import rx.schedulers.Schedulers;
-import test.rx.services.AccountService;
+import test.rx.services.AccountClient;
 import test.rx.services.TransactionService;
 import test.rx.services.TransactionService.TransactionState;
 import test.rx.tools.PrintingObserver;
@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 public class RealExample {
 
     private final TransactionService transactionService = new TransactionService();
-    private final AccountService accountService = new AccountService(1000);
-    private final AccountService accountBackupService = new AccountService(250);
+    private final AccountClient accountService = new AccountClient(1000);
+    private final AccountClient accountBackupService = new AccountClient(250);
 
     private final Observer<Object> subscriber = new PrintingObserver();
 
