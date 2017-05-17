@@ -3,37 +3,47 @@ package test.rx.services;
 
 import rx.Observable;
 import rx.schedulers.Schedulers;
-import test.rx.tools.Log;
-import test.rx.tools.Threads;
+
+import static test.rx.tools.Log.print;
+import static test.rx.tools.Threads.sleep;
 
 public class AccountService {
 
-    public Observable<AccountDetailsResponse> getAccount(int accountIdn) {
+    private final int callDuration;
+
+    public AccountService(int callDuration) {
+        this.callDuration = callDuration;
+    }
+
+    public Observable<AccountBalance> getAccountBalance(String accountNo) {
         return Observable
                 .fromCallable(() -> {
-                    Log.print("Get user");
-                    Threads.sleep(1000);
-                    return new AccountDetailsResponse("1234", 1000);
+                    print("getAccountBalance START");
+                    sleep(callDuration);
+                    AccountBalance balance = new AccountBalance(1000);
+                    print("getAccountBalance END");
+                    return balance;
                 })
                 .subscribeOn(Schedulers.io());
     }
 
-    public static class AccountDetailsResponse {
+    public static class AccountBalance {
 
-        private final String no;
         private final double balance;
 
-        public AccountDetailsResponse(String no, double balance) {
-            this.no = no;
+        AccountBalance(double balance) {
             this.balance = balance;
-        }
-
-        public String getNo() {
-            return no;
         }
 
         public double getBalance() {
             return balance;
+        }
+
+        @Override
+        public String toString() {
+            return "AccountBalance{" +
+                    "balance=" + balance +
+                    '}';
         }
     }
 }

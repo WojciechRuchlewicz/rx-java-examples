@@ -11,7 +11,10 @@ import rx.subjects.AsyncSubject;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.ReplaySubject;
-import test.rx.services.RestService;
+import test.rx.services.AccountService;
+import test.rx.services.RestClient;
+import test.rx.services.TemperatureSensor;
+import test.rx.services.UserDao;
 import test.rx.tools.Log;
 import test.rx.tools.PrintingObserver;
 
@@ -24,6 +27,12 @@ import static test.rx.tools.Threads.sleep;
 public class Examples {
 
     private final Observer<Object> subscriber = new PrintingObserver();
+    private final TemperatureSensor temperatureSensor = new TemperatureSensor();
+    private final UserDao userDao = new UserDao();
+
+    private final AccountService accountService1 = new AccountService(1000);
+    private final AccountService accountService2 = new AccountService(500);
+    private final AccountService accountService3 = new AccountService(1500);
 
     /******************************************************************************************************************
      * Syntax
@@ -122,8 +131,114 @@ public class Examples {
                 //.from(new Integer[] { 1, 2, 3 })
                 //.from(Arrays.asList(1, 2, 3))
                 //.from(CompletableFuture.completedFuture(1))
-                //.fromCallable(() -> 1)
                 .subscribe(subscriber);
+    }
+
+    @Test
+    public void fromCallable() {
+
+        userDao.getUserObservable(1)
+                .subscribe(subscriber);
+    }
+
+    /******************************************************************************************************************
+     * Subjects
+     ******************************************************************************************************************/
+
+    @Test
+    public void asyncSubject() {
+
+        AsyncSubject<Integer> subject = AsyncSubject.create();
+
+        subject.onNext(1);
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 3
+        subject.onNext(2);
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
+        subject.onNext(3);
+        subject.onCompleted();
+    }
+
+
+    @Test
+    public void behaviorSubject() {
+
+        BehaviorSubject<Integer> subject = BehaviorSubject.create(0); // Default value
+
+        subject.onNext(1);
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
+        subject.onNext(2);
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 2, 3
+        subject.onNext(3);
+        subject.onCompleted();
+    }
+
+
+    @Test
+    public void publishSubject() {
+
+        PublishSubject<Integer> subject = PublishSubject.create();
+
+        subject.onNext(1);
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 2, 3
+        subject.onNext(2);
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
+        subject.onNext(3);
+        subject.onCompleted();
+    }
+
+
+    @Test
+    public void replaySubject() {
+
+        ReplaySubject<Integer> subject = ReplaySubject.create();
+
+        subject.onNext(1);
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
+        subject.onNext(2);
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 1, 2, 3
+        subject.onNext(3);
+        subject.onCompleted();
+    }
+
+    /******************************************************************************************************************
+     * Time
+     ******************************************************************************************************************/
+
+    @Test
+    public void interval() {
+
+        print("start");
+
+        Observable
+                .interval(1, TimeUnit.SECONDS)
+                .subscribe(subscriber);
+
+        sleep(10000);
+    }
+
+    @Test
+    public void timer() {
+
+        print("start");
+
+        Observable
+                .timer(3, TimeUnit.SECONDS)
+                .subscribe(subscriber);
+
+        sleep(5000);
+    }
+
+    @Test
+    public void delay() {
+
+        print("start");
+
+        Observable
+                .just(1, 2, 3)
+                .delay(1, TimeUnit.SECONDS)
+                .subscribe(subscriber);
+
+        sleep(2000);
     }
 
     /******************************************************************************************************************
@@ -149,7 +264,13 @@ public class Examples {
     @Test
     public void distinct() {
         Observable.just(1, 2, 2, 3, 3, 3, 2, 2, 2)
-                //.distinct()
+                .distinct()
+                .subscribe(subscriber);
+    }
+
+    @Test
+    public void distinctUntilChanged() {
+        temperatureSensor.getTemperatureStream()
                 //.distinctUntilChanged()
                 .subscribe(subscriber);
     }
@@ -214,9 +335,9 @@ public class Examples {
 
         Observable
                 .amb(
-                        Observable.just(1, 2, 3).delay(3, TimeUnit.SECONDS),
-                        Observable.just(4, 5, 6).delay(1, TimeUnit.SECONDS),
-                        Observable.just(7, 8, 9).delay(2, TimeUnit.SECONDS)
+                        accountService1.getAccountBalance("1234"),
+                        accountService2.getAccountBalance("1234"),
+                        accountService3.getAccountBalance("1234")
                 )
                 .subscribe(subscriber);
 
@@ -317,27 +438,10 @@ public class Examples {
     }
 
     /******************************************************************************************************************
-     * Time
-     ******************************************************************************************************************/
-
-    @Test
-    public void delay() {
-
-        print("start");
-
-        Observable
-                .just(1, 2, 3)
-                .delay(1, TimeUnit.SECONDS)
-                .subscribe(subscriber);
-
-        sleep(2000);
-    }
-
-    /******************************************************************************************************************
      * Threading
      ******************************************************************************************************************/
 
-    private RestService restService = new RestService();
+    private RestClient restService = new RestClient();
 
     @Test
     public void multithreading1() {
@@ -380,7 +484,8 @@ public class Examples {
      * Error handling
      ******************************************************************************************************************/
 
-    @Test public void noErrorHandling() {
+    @Test
+    public void noErrorHandling() {
 
         Observable
                 .error(new Exception())
@@ -388,7 +493,8 @@ public class Examples {
     }
 
 
-    @Test public void defaultErrorHandling1() {
+    @Test
+    public void defaultErrorHandling1() {
 
         Observable
                 .error(new Exception())
@@ -399,7 +505,8 @@ public class Examples {
     }
 
 
-    @Test public void defaultErrorHandling2() {
+    @Test
+    public void defaultErrorHandling2() {
 
         Observable
                 .just(1, 2, 3)
@@ -410,7 +517,8 @@ public class Examples {
                 );
     }
 
-    @Test public void doOnError() {
+    @Test
+    public void doOnError() {
 
         Observable
                 .error(new Exception())
@@ -420,7 +528,8 @@ public class Examples {
 
     // Recovery Mechanisms
 
-    @Test public void onErrorReturn() {
+    @Test
+    public void onErrorReturn() {
 
         Observable.just(1, 2)
                 .concatWith(Observable.error(new Exception())) // 1, 2, Error
@@ -428,7 +537,8 @@ public class Examples {
                 .subscribe(subscriber);
     }
 
-    @Test public void onErrorResumeNext() {
+    @Test
+    public void onErrorResumeNext() {
 
         Observable.just(1, 2)
                 .concatWith(Observable.error(new Exception())) // 1, 2, Error
@@ -436,7 +546,8 @@ public class Examples {
                 .subscribe(subscriber);
     }
 
-    @Test public void retry() {
+    @Test
+    public void retry() {
 
         Observable
                 .fromCallable(() -> {
@@ -452,7 +563,8 @@ public class Examples {
     }
 
 
-    @Test public void retryWhen() {
+    @Test
+    public void retryWhen() {
 
         Observable<Long> retryObservable = Observable
                 .interval(1, TimeUnit.SECONDS)
@@ -470,65 +582,11 @@ public class Examples {
     }
 
     /******************************************************************************************************************
-     * Subjects
-     ******************************************************************************************************************/
-
-    @Test public void asyncSubject() {
-
-        AsyncSubject<Integer> subject = AsyncSubject.create();
-
-        subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1")); // 3
-        subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
-        subject.onNext(3);
-        subject.onCompleted();
-    }
-
-
-    @Test public void behaviorSubject() {
-
-        BehaviorSubject<Integer> subject = BehaviorSubject.create(0); // Default value
-
-        subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
-        subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2")); // 2, 3
-        subject.onNext(3);
-        subject.onCompleted();
-    }
-
-
-    @Test public void publishSubject() {
-
-        PublishSubject<Integer> subject = PublishSubject.create();
-
-        subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1")); // 2, 3
-        subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
-        subject.onNext(3);
-        subject.onCompleted();
-    }
-
-
-    @Test public void replaySubject() {
-
-        ReplaySubject<Integer> subject = ReplaySubject.create();
-
-        subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
-        subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2")); // 1, 2, 3
-        subject.onNext(3);
-        subject.onCompleted();
-    }
-
-    /******************************************************************************************************************
      * Unit Tests
      ******************************************************************************************************************/
 
-    @Test public void testSubscriber() {
+    @Test
+    public void testSubscriber() {
 
         TestSubscriber<Long> testSubscriber = TestSubscriber.create();
 
@@ -545,7 +603,8 @@ public class Examples {
         testSubscriber.assertValues(0L, 1L);
     }
 
-    @Test public void testScheduler() {
+    @Test
+    public void testScheduler() {
 
         TestScheduler testScheduler = Schedulers.test();
 

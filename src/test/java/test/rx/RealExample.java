@@ -6,8 +6,7 @@ import rx.Observer;
 import rx.schedulers.Schedulers;
 import test.rx.services.AccountService;
 import test.rx.services.TransactionService;
-import test.rx.services.UserService;
-import test.rx.tools.Log;
+import test.rx.services.TransactionService.TransactionState;
 import test.rx.tools.PrintingObserver;
 import test.rx.tools.Threads;
 
@@ -16,24 +15,25 @@ import java.util.concurrent.TimeUnit;
 public class RealExample {
 
     private final TransactionService transactionService = new TransactionService();
-    private final UserService userService = new UserService();
-    private final AccountService accountService = new AccountService();
+    private final AccountService accountService = new AccountService(1000);
+    private final AccountService accountBackupService = new AccountService(250);
 
-    Observer<Object> subscriber = new PrintingObserver();
+    private final Observer<Object> subscriber = new PrintingObserver();
 
     @Test
     public void test() {
 
-        transactionService.getTransactionsObservable()
-                .doOnNext(Log::print)
-                .flatMap(transaction -> Observable
+        transactionService.getTransactionsUpdates()
+                .filter(event -> event.getState() == TransactionState.COMPLETED)
+                .flatMap(event -> Observable
                         .zip(
-                                userService.getUser(transaction.getUserId())
+                                transactionService.getTransactionDetails(event.getTransactionId())
                                         .timeout(500, TimeUnit.MILLISECONDS)
-                                        .retry(3)
-                                        .onErrorReturn(throwable -> new UserService.UserDetailsResponse("mock", "owner")),
-                                accountService.getAccount(transaction.getAccountId()),
-                                (user, account) -> createTransactionAggregate(transaction, user, account)
+                                        .retry(3),
+                                accountService.getAccountBalance(event.getAccountNo())
+                                        .timeout(500, TimeUnit.MILLISECONDS)
+                                        .onErrorResumeNext(accountBackupService.getAccountBalance(event.getAccountNo())),
+                                (transaction, account) -> "Transaction " + event.getTransactionId() + " completed. Price: " + transaction.getPrice() + ", current balance: " + account.getBalance()
                         )
                 )
                 .observeOn(Schedulers.newThread())
@@ -42,10 +42,4 @@ public class RealExample {
         Threads.sleep(5000);
     }
 
-    private TransactionAggregate createTransactionAggregate(TransactionService.Transaction transaction, UserService.UserDetailsResponse user, AccountService.AccountDetailsResponse account) {
-        return new TransactionAggregate();
-    }
-
-    static class TransactionAggregate {
-    }
 }

@@ -6,7 +6,7 @@ import rx.schedulers.Schedulers;
 import test.rx.tools.Log;
 import test.rx.tools.Threads;
 
-public class RestService {
+public class RestClient {
 
     public Observable<Integer> callService1() {
         return Observable
@@ -23,7 +23,7 @@ public class RestService {
                 .fromCallable(() -> {
                     Log.print("callService2");
                     Threads.sleep(2000);
-                    return 2;
+                    return 1;
                 })
                 .subscribeOn(Schedulers.io());
     }

@@ -8,11 +8,12 @@ import java.util.Random;
 import static test.rx.tools.Threads.sleep;
 
 
-public class TemperatureService {
+public class TemperatureSensor {
 
     private Random random = new Random();
+    private int temperature = 20;
 
-    public Observable<Integer> getTemperatureObservable() {
+    public Observable<Integer> getTemperatureStream() {
         return Observable
                 .create(subscriber -> {
                     try {
@@ -20,9 +21,13 @@ public class TemperatureService {
                             if (subscriber.isUnsubscribed()) {
                                 break;
                             } else {
-                                subscriber.onNext(random.nextInt(3) + 20);
+                                switch (random.nextInt(10)) {
+                                    case 0: temperature++; break;
+                                    case 1: temperature--; break;
+                                }
+                                subscriber.onNext(temperature);
                             }
-                            sleep(1);
+                            sleep(1000);
                         }
                     } catch (Exception e) {
                         if (!subscriber.isUnsubscribed()) {
