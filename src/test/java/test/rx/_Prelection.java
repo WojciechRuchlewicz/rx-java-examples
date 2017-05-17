@@ -14,9 +14,7 @@ import rx.subjects.ReplaySubject;
 import test.rx.services.RestService;
 import test.rx.tools.Log;
 import test.rx.tools.PrintingObserver;
-import test.rx.tools.Threads;
 
-import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -96,16 +94,16 @@ public class _Prelection {
     @Test
     public void createFromScratch() throws Exception {
 
-        Observable.create((Observable.OnSubscribe<Integer>) observer -> {
-            try {
-                if (!observer.isUnsubscribed()) {
+        Observable.create(observer -> {
+            if (!observer.isUnsubscribed()) {
+                try {
                     for (int i = 0; i < 3; i++) {
                         observer.onNext(i);
                     }
                     observer.onCompleted();
+                } catch (Exception e) {
+                    observer.onError(e);
                 }
-            } catch (Exception e) {
-                observer.onError(e);
             }
         }).subscribe(subscriber);
     }
@@ -133,7 +131,7 @@ public class _Prelection {
      ******************************************************************************************************************/
 
     @Test
-    public void filterByOperators() {
+    public void filter() {
 
         Observable
                 .range(1, 50)
@@ -149,7 +147,7 @@ public class _Prelection {
     }
 
     @Test
-    public void filterDistinct() {
+    public void distinct() {
         Observable.just(1, 2, 2, 3, 3, 3, 2, 2, 2)
                 //.distinct()
                 //.distinctUntilChanged()
@@ -175,7 +173,7 @@ public class _Prelection {
      ******************************************************************************************************************/
 
     @Test
-    public void aggregationOperators() {
+    public void aggregate() {
         Observable
                 .just(1, 2, 3)
                 //.count()
@@ -195,15 +193,15 @@ public class _Prelection {
      ******************************************************************************************************************/
 
     @Test
-    public void combineOperators() {
+    public void combine() {
         Observable
                 .just(1, 2, 3)
                 //.startWith(-1, 0)
                 //.mergeWith(Observable.just(4, 5, 6))
                 //.concatWith(Observable.just(4, 5, 6))
+                //.ambWith(Observable.just(4, 5, 6))
                 //.zipWith(Observable.just("a", "b"), (l, n) -> l + n)
                 //.withLatestFrom(Observable.just("a", "b"), (l, n) -> l + n)
-                //.ambWith() // TODO
                 .subscribe(subscriber);
     }
 
@@ -222,7 +220,7 @@ public class _Prelection {
                 )
                 .subscribe(subscriber);
 
-        Threads.sleep(2000);
+        sleep(4000);
     }
 
 
@@ -254,11 +252,10 @@ public class _Prelection {
                 .skipUntil(Observable.just(1).delay(3, TimeUnit.SECONDS))
                 .subscribe(subscriber);
 
-        Threads.sleep(7000);
+        sleep(7000);
     }
 
 
-    // determine whether an Observable emits a particular item or not
     @Test
     public void assertions() {
 
@@ -270,7 +267,7 @@ public class _Prelection {
                 .subscribe(subscriber);
     }
 
-    // test the equality of the sequences emitted by two Observables
+
     @Test
     public void sequenceEqual() {
 
@@ -294,7 +291,7 @@ public class _Prelection {
                     print("Create");
                     return "result";
                 });
-        //cache();
+                //.cache();
 
         observable.subscribe(subscriber);
         observable.subscribe(subscriber);
@@ -305,11 +302,9 @@ public class _Prelection {
     public void events() {
 
         Observable
-                .concat(
-                        // 1, 2, Error
-                        Observable.just(1, 2),
-                        Observable.error(new Exception())
-                )
+                .just(1, 2)
+                .concatWith(Observable.error(new Exception())) // 1, 2, Error
+
                 .doOnNext(n -> print("doOnNext " + n))
                 .doOnEach(n -> print("doOnEach " + n))
                 .doOnCompleted(() -> print("doOnCompleted"))
@@ -321,54 +316,36 @@ public class _Prelection {
                 .subscribe(subscriber);
     }
 
+    /******************************************************************************************************************
+     * Time
+     ******************************************************************************************************************/
 
-    @Test
-    public void timeInterval() {
-
-        Observable
-                .interval(1, TimeUnit.SECONDS)
-                .timeInterval()
-                .subscribe(subscriber);
-
-        Threads.sleep(5000);
-    }
-
-
-    //  shift the emissions from an Observable forward in time by a specified amount
     @Test
     public void delay() {
+
+        print("start");
 
         Observable
                 .just(1, 2, 3)
                 .delay(1, TimeUnit.SECONDS)
                 .subscribe(subscriber);
 
-        Threads.sleep(2000);
-    }
-
-
-    @Test
-    public void materialize() {
-
-        Observable
-                .just(1, 2, 3)
-                .materialize()
-                .subscribe(subscriber);
+        sleep(2000);
     }
 
     /******************************************************************************************************************
      * Threading
      ******************************************************************************************************************/
 
-    RestService restService = new RestService();
+    private RestService restService = new RestService();
 
-    @Test
+    @Test // TODO
     public void multithreading() {
         Observable
-                .fromCallable(() -> { print("Observable"); return 1; })
+                .fromCallable(() -> { print("create"); return 1; })
+                .filter(n -> { print("filter"); return true; })
+                .map(n -> { print("map"); return n; })
                 //.subscribeOn(Schedulers.computation())
-                .filter(n -> { print("Operator 1"); return true; })
-                .filter(n -> { print("Operator 2"); return true; })
                 //.observeOn(Schedulers.newThread())
                 .subscribe(subscriber);
 
@@ -390,20 +367,20 @@ public class _Prelection {
 
     private void schedulers() {
 
-        Schedulers.newThread(); // Creates and returns a Scheduler that creates a new Thread for each unit of work.
-        Schedulers.io(); // Creates and returns a Scheduler intended for IO-bound work. The implementation is backed by an Executor thread-pool that will grow as needed. This can be used for asynchronously performing blocking IO. Schedulers.io( ) by default is a CachedThreadScheduler, which is something like a new thread scheduler with thread caching.
-        Schedulers.computation(); // Creates and returns a Scheduler intended for computational work. This can be used for event-loops, processing callbacks and other computational work. the number of threads, by default, is equal to the number of processors.
-        Schedulers.immediate(); // Creates and returns a Scheduler that executes work immediately on the current thread.
-        Schedulers.trampoline(); // Creates and returns a Scheduler that queues work on the current thread to be executed after the current work completes.
-        Schedulers.from(Executors.newFixedThreadPool(4)); // uses the specified Executor as a Scheduler
-        Schedulers.test(); // Creates and returns a TestScheduler, which is useful for debugging. It allows you to test schedules of events by manually advancing the clock at whatever pace you choose.
+        Schedulers.newThread();
+        Schedulers.io();
+        Schedulers.computation();
+        Schedulers.immediate();
+        Schedulers.trampoline();
+        Schedulers.from(Executors.newFixedThreadPool(4));
+        Schedulers.test();
     }
 
     /******************************************************************************************************************
      * Error handling
      ******************************************************************************************************************/
 
-    @Test public void default_error_handling_0() {
+    @Test public void noErrorHandling() {
 
         Observable
                 .error(new Exception())
@@ -411,18 +388,18 @@ public class _Prelection {
     }
 
 
-    @Test public void default_error_handling_1() {
+    @Test public void defaultErrorHandling1() {
 
         Observable
                 .error(new Exception())
                 .subscribe(
                         n  -> print("onNext " + n),
-                        e  -> print("onError " + e) // Obsługa błędów
+                        e  -> print("onError " + e)
                 );
     }
 
 
-    @Test public void default_error_handling_2() {
+    @Test public void defaultErrorHandling2() {
 
         Observable
                 .just(1, 2, 3)
@@ -441,43 +418,24 @@ public class _Prelection {
                 .subscribe(subscriber);
     }
 
-    // Recovery Mechanisms:
+    // Recovery Mechanisms
 
-    // closing the stream gracefully
-
-    // Instructs an Observable to emit an item (returned by a specified function) rather than invoking
-    // {@link Observer#onError onError} if it encounters an error.
     @Test public void onErrorReturn() {
 
-        Observable
-                .concat(
-                        Observable.just(1, 2),
-                        Observable.error(new Exception())
-                )
-                .onErrorReturn(throwable -> -1) // Handling error by returning a value indicating error
+        Observable.just(1, 2)
+                .concatWith(Observable.error(new Exception())) // 1, 2, Error
+                .onErrorReturn(throwable -> -1)
                 .subscribe(subscriber);
     }
 
-
-    /**
-     * Using a backup
-     *
-     * Instructs an Observable to pass control to another Observable rather than invoking
-     * {@link Observer#onError onError} if it encounters an error.
-     */
     @Test public void onErrorResumeNext() {
 
-        Observable
-                .concat(
-                        Observable.just(1, 2),
-                        Observable.error(new Exception())
-                )
-                .onErrorResumeNext(Observable.just(3, 4)) // Resuming with a backup service
+        Observable.just(1, 2)
+                .concatWith(Observable.error(new Exception())) // 1, 2, Error
+                .onErrorResumeNext(Observable.just(3, 4)) // backup service
                 .subscribe(subscriber);
     }
 
-
-    // if a source Observable emits an error, resubscribe to it in the hopes that it will complete without error
     @Test public void retry() {
 
         Observable
@@ -494,21 +452,15 @@ public class _Prelection {
     }
 
 
-    /*
-     * Returns an Observable that emits the same values as the source observable with the exception of an
-     * {@code onError}. An {@code onError} notification from the source will result in the emission of a
-     * {@link Throwable} item to the Observable provided as an argument to the {@code notificationHandler}
-     * function. If that Observable calls {@code onComplete} or {@code onError} then {@code retry} will call
-     * {@code onCompleted} or {@code onError} on the child subscription. Otherwise, this Observable will
-     * resubscribe to the source Observable.
-     */
     @Test public void retryWhen() {
 
-        Observable<Long> retryObservable = Observable.interval(1, TimeUnit.SECONDS).take(5);
+        Observable<Long> retryObservable = Observable
+                .interval(1, TimeUnit.SECONDS)
+                .take(5);
 
         Observable
                 .fromCallable(() -> {
-                    print("create: exception");
+                    print("Error thrown");
                     throw new Exception();
                 })
                 .retryWhen(errorStream -> retryObservable)
@@ -521,57 +473,53 @@ public class _Prelection {
      * Subjects
      ******************************************************************************************************************/
 
-    // An AsyncSubject emits the last value emitted by the source Observable, and only after that source Observable completes. (If the source Observable does not emit any values, the AsyncSubject also completes without emitting any values.)
     @Test public void asyncSubject() {
 
         AsyncSubject<Integer> subject = AsyncSubject.create();
 
         subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1"));
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 3
         subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2"));
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
         subject.onNext(3);
         subject.onCompleted();
     }
 
 
-    // When an observer subscribes to a BehaviorSubject, it begins by emitting the item most recently emitted by the source Observable (or a seed/default value if none has yet been emitted) and then continues to emit any other items emitted later by the source Observable(s).
     @Test public void behaviorSubject() {
 
         BehaviorSubject<Integer> subject = BehaviorSubject.create(0); // Default value
 
         subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1"));
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
         subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2"));
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 2, 3
         subject.onNext(3);
         subject.onCompleted();
     }
 
 
-    // PublishSubject emits to an observer only those items that are emitted by the source Observable(s) subsequent to the time of the subscription.
     @Test public void publishSubject() {
 
         PublishSubject<Integer> subject = PublishSubject.create();
 
         subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1"));
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 2, 3
         subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2"));
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 3
         subject.onNext(3);
         subject.onCompleted();
     }
 
 
-    // ReplaySubject emits to any observer all of the items that were emitted by the source Observable(s), regardless of when the observer subscribes.
     @Test public void replaySubject() {
 
         ReplaySubject<Integer> subject = ReplaySubject.create();
 
         subject.onNext(1);
-        subject.subscribe(new PrintingObserver("Subscriber 1"));
+        subject.subscribe(new PrintingObserver("Subscriber 1")); // 1, 2, 3
         subject.onNext(2);
-        subject.subscribe(new PrintingObserver("Subscriber 2"));
+        subject.subscribe(new PrintingObserver("Subscriber 2")); // 1, 2, 3
         subject.onNext(3);
         subject.onCompleted();
     }
