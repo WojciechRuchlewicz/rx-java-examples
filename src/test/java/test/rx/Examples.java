@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import static test.rx.tools.Log.print;
 import static test.rx.tools.Threads.sleep;
 
-public class _Prelection {
+public class Examples {
 
     private final Observer<Object> subscriber = new PrintingObserver();
 
@@ -92,7 +92,7 @@ public class _Prelection {
      ******************************************************************************************************************/
 
     @Test
-    public void createFromScratch() throws Exception {
+    public void create() throws Exception {
 
         Observable.create(observer -> {
             if (!observer.isUnsubscribed()) {
@@ -339,8 +339,8 @@ public class _Prelection {
 
     private RestService restService = new RestService();
 
-    @Test // TODO
-    public void multithreading() {
+    @Test
+    public void multithreading1() {
         Observable
                 .fromCallable(() -> { print("create"); return 1; })
                 .filter(n -> { print("filter"); return true; })
@@ -355,7 +355,7 @@ public class _Prelection {
 
 
     @Test
-    public void multithreading_subscribeOn_4() {
+    public void multithreading2() {
         restService.callService1()
                 .zipWith(restService.callService2(), (a, b) -> a + b)
                 .observeOn(Schedulers.newThread())
@@ -384,7 +384,7 @@ public class _Prelection {
 
         Observable
                 .error(new Exception())
-                .subscribe(n  -> print("onNext " + n)); // Brak obsługi błędów
+                .subscribe(n  -> print("onNext " + n));
     }
 
 
